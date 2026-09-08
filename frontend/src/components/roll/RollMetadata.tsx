@@ -1,0 +1,3 @@
+import {Roll} from '@/types';
+import {formatDate} from '@/lib/api';
+export function RollMetadata({roll}: {roll: Roll}) {return <dl className="roll-metadata">{[['胶片', roll.film_stock], ['相机', roll.camera], ['镜头', roll.lenses.map(l => l.name).join(' / ') || '未记录'], ['拍摄时间', `${formatDate(roll.started_at)}${roll.finished_at ? ` — ${formatDate(roll.finished_at)}` : ' — 进行中'}`], ['地点', roll.location || '未记录'], ['拍摄 EI', roll.shot_iso?.toString() || '未记录'], ['照片', `${roll.actual_frames} 张 / 预计 ${roll.expected_frames} 张`]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;}

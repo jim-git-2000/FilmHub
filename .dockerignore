@@ -1,0 +1,13 @@
+.git
+.agents
+.codex
+**/node_modules
+**/.next
+**/__pycache__
+**/*.tsbuildinfo
+**/var
+**/test-results
+**/playwright-report
+.env
+*.tar
+*.zip

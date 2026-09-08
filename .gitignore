@@ -1,0 +1,15 @@
+var/
+.env
+node_modules/
+.next/
+__pycache__/
+*.pyc
+.venv/
+playwright-report/
+test-results/
+*.tsbuildinfo
+*.tar
+*.zip
+dist/
+backend/requirements-ci.txt
+container-logs.txt

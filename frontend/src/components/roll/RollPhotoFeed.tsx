@@ -1,0 +1,4 @@
+import {Roll} from '@/types';
+import {FilmFrame} from '@/components/film/FilmFrame';
+import {formatDate, frameNumber} from '@/lib/api';
+export function RollPhotoFeed({roll}: {roll: Roll}) {return <section className="detail-section photo-feed"><div className="section-heading"><h2>单张展示<span className="english-label">FRAME BY FRAME</span></h2><a href="#contact-sheet" className="text-button">返回总览 ↑</a></div>{roll.photos.map(photo => <figure id={`photo-${photo.frame_number}`} key={photo.id} className={`feed-photo ${photo.height > photo.width ? 'portrait' : ''}`}><div className="feed-kicker"><span className="mono">FRAME {frameNumber(photo.frame_number)}</span>{photo.is_favorite && <span className="favorite-label">★ 收藏</span>}</div><FilmFrame photo={photo} variant="photo" label={roll.film_stock}/><figcaption><p>{photo.caption || roll.location || '未命名的片刻'}</p><span className="mono">{formatDate(roll.started_at)}</span></figcaption></figure>)}</section>;}

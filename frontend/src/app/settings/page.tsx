@@ -1,0 +1,19 @@
+'use client';
+import {useRef, useState} from 'react';
+import {Backup} from '@/types';
+import {api, json, message, useResource} from '@/lib/api';
+import {ErrorNotice, Loading} from '@/components/layout/Feedback';
+import {Modal} from '@/components/layout/Modal';
+function size(bytes: number) {return bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(2)} GB` : `${(bytes / 1024 ** 2).toFixed(1)} MB`;}
+export default function SettingsPage() {
+  const backups = useResource<Backup[]>('/backups'), picker = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState(''), [restoreFile, setRestoreFile] = useState<File | null>(null), [confirmed, setConfirmed] = useState(false);
+  async function backup() {setBusy(true); setError(''); setNotice(''); try {const result = await api<Backup>('/backups', json('POST')); await backups.reload(); setNotice(`备份已生成：${result.name}，请点击下载并妥善保管。`);} catch (err) {setError(message(err));} finally {setBusy(false);}}
+  async function restore() {
+    if (!restoreFile || !confirmed) return;
+    setBusy(true); setError(''); setNotice('');
+    try {const body = new FormData(); body.append('file', restoreFile); const result = await api<{safety_backup: string}>('/restore?confirm=restore', {method: 'POST', body}); setRestoreFile(null); setNotice(`档案和照片已同步恢复。恢复前的数据已备份为 ${result.safety_backup}。`); await backups.reload();}
+    catch (err) {setError(message(err));} finally {setBusy(false); if (picker.current) picker.current.value = '';}
+  }
+  return <div className="narrow-page"><section className="page-heading"><p className="eyebrow">KEEP YOUR MEMORIES SAFE</p><h1>设置<span className="heading-period">.</span></h1><p className="intro">把每一份记录和照片，好好留存。</p></section><ErrorNotice error={error || backups.error} retry={backups.reload}/>{notice && <p className="notice" role="status">{notice}</p>}<section className="settings-section"><h2>备份档案</h2><p>将所有胶卷、器材条目、冲扫记录与照片一起打包。下载后的 ZIP 文件可以用于迁移和恢复。</p><button className="button primary" disabled={busy} onClick={() => void backup()}>{busy ? '正在处理，请稍候…' : '生成完整备份 ↓'}</button><p className="muted">备份保留在服务器，建议同时下载到其他设备。</p>{backups.loading ? <Loading/> : <ul className="backup-list">{backups.data?.map(item => <li key={item.name}><div><span className="mono">{item.name}</span><small className="muted">{size(item.size)}</small></div><a className="button small" href={`/api/backups/${encodeURIComponent(item.name)}`} download>下载</a></li>)}</ul>}</section><section className="settings-section"><h2>从备份恢复</h2><p>选择 FilmHub 生成的 ZIP 备份。系统会检查文件，并先备份当前数据，再同步恢复数据库和照片。</p><input ref={picker} type="file" accept=".zip,application/zip" className="sr-only" aria-label="选择备份文件" onChange={e => {const file = e.target.files?.[0]; if (file) {if (file.size > 4 * 1024 ** 3) {setError('备份文件不能超过 4 GB。'); e.target.value = ''; return;} setRestoreFile(file); setConfirmed(false); setError('');}}}/><button className="button" disabled={busy} onClick={() => picker.current?.click()}>选择备份文件</button></section><section className="settings-section about"><h2>关于 FilmHub</h2><p>一个以每一卷胶片为单位的个人摄影档案。</p><p className="mono muted">FILMHUB V1 · LIGHT, GRAIN & MEMORIES</p></section>{restoreFile && <Modal title="恢复胶卷档案" close={() => {if (!busy) {setRestoreFile(null); if (picker.current) picker.current.value = '';}}}><p>即将恢复 <strong className="break-word">{restoreFile.name}</strong>（{size(restoreFile.size)}）。</p><p>这会替换当前所有胶卷记录和照片。当前数据会先自动备份。</p><label className="confirm-checkbox"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} disabled={busy}/>我了解当前档案将被替换</label><ErrorNotice error={error}/><div className="form-actions"><button className="button" disabled={busy} onClick={() => setRestoreFile(null)}>取消</button><button className="button primary" disabled={!confirmed || busy} onClick={() => void restore()}>{busy ? '正在校验与恢复…' : '确认恢复'}</button></div></Modal>}</div>;
+}
