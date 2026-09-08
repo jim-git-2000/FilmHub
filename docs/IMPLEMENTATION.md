@@ -56,6 +56,16 @@ GitHub Actions 将按以下顺序执行：
 
 ## 实现决策与边界
 
+### 首次 CI 注解修复
+
+用户提供的 CI 注解显示前端在类型检查阶段退出：Playwright 回调参数为 `SVGElement | HTMLElement`，无法直接访问图片专属属性。现已在图片加载与比例检查中使用 `instanceof HTMLImageElement` 收窄类型；保留原有断言和正式类型检查步骤。
+
+报告上传仅在浏览器验收步骤实际成功或失败后运行，避免类型检查失败导致测试跳过时上传不存在的报告。Actions 更新为 Node.js 24 运行时版本：checkout v5、setup-python v6、setup-node v5、upload-artifact v6、download-artifact v7，以及 Docker buildx/login v4。应用构建使用的 Node.js 仍为 22；Actions 运行时与应用版本是独立配置。版本依据各官方 `action.yml`，例如 [upload-artifact v6](https://github.com/actions/upload-artifact/blob/v6/action.yml) 和 [download-artifact v7](https://github.com/actions/download-artifact/blob/v7/action.yml)。
+
+本次修复已通过本地 TypeScript 语法解析、YAML 与步骤引用检查和 `git diff --check`；尚未在本机还原项目依赖或执行正式类型检查，修复结果需由新一轮 CI 验证。此前的轻量语法检查无法发现这类类型错误。
+
+### 既有实现边界
+
 - 计划中的模型职责集中在一份显式 SQL 结构，HTTP 路由集中在 `routers/api.py`，服务按档案、图片、备份和存储分开；不为每个小表增加空模型或 ORM 抽象。
 - 保留全部七个指定页面，不创建 `/films`、`/cameras`、`/lenses` 或独立照片详情路由。
 - 未提供设计稿图片，视觉按计划中的 cream 纸色、深色片基、直角、小字编号、细线和留白实现；不伪造用户照片。

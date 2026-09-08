@@ -82,8 +82,11 @@ test('完整胶卷流程、照片比例、响应式、备份与恢复', async ({
     const photo = page.locator('.feed-photo').first().locator('img');
     await photo.scrollIntoViewIfNeeded();
     await expect(photo).toBeVisible();
-    await expect.poll(() => photo.evaluate(el => el.complete && el.naturalWidth > 0)).toBe(true);
-    expect(await photo.evaluate(el => Math.abs(el.width / el.height - el.naturalWidth / el.naturalHeight))).toBeLessThan(0.02);
+    await expect.poll(() => photo.evaluate(el => el instanceof HTMLImageElement && el.complete && el.naturalWidth > 0)).toBe(true);
+    expect(await photo.evaluate(el => {
+      if (!(el instanceof HTMLImageElement)) throw new Error('单张展示应包含图片元素');
+      return Math.abs(el.width / el.height - el.naturalWidth / el.naturalHeight);
+    })).toBeLessThan(0.02);
   }
   await page.screenshot({path: testInfo.outputPath('roll-mobile.png'), fullPage: true});
   await page.setViewportSize({width: 1440, height: 1000});

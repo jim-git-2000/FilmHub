@@ -17,8 +17,8 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Restore Python dependencies
@@ -28,18 +28,18 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Record resolved dependency versions
         run: python -m pip freeze > backend/requirements-ci.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: backend-dependencies
           path: backend/requirements-ci.txt
   frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Restore dependencies
@@ -54,17 +54,18 @@ jobs:
         working-directory: frontend
         run: npx playwright install --with-deps chromium
       - name: Browser acceptance
+        id: browser_acceptance
         run: npm run test:e2e --prefix frontend
       - name: Save browser reports and screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
+        if: ${{ always() && (steps.browser_acceptance.outcome == 'success' || steps.browser_acceptance.outcome == 'failure') }}
+        uses: actions/upload-artifact@v6
         with:
           name: browser-acceptance
           path: |
             frontend/playwright-report/
             frontend/test-results/
           retention-days: 7
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: frontend-dependencies
           path: frontend/package-lock.json
@@ -72,16 +73,16 @@ jobs:
     needs: [backend, frontend]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v7
         with:
           name: frontend-dependencies
           path: frontend
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: backend-dependencies
           path: backend
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Validate and build deployment
         run: |
           docker compose config --quiet
@@ -93,7 +94,7 @@ jobs:
       - name: Capture container logs
         if: always()
         run: docker compose logs --no-color > container-logs.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: container-logs
@@ -106,7 +107,7 @@ jobs:
           cp docker/nginx.conf dist/docker/
           cp frontend/package-lock.json backend/requirements-ci.txt dist/
           cp docs/IMPLEMENTATION.md dist/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: filmhub-linux-amd64
           path: dist/
@@ -122,11 +123,11 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: filmhub-linux-amd64
           path: dist
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
